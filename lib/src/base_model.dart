@@ -106,6 +106,11 @@ class BaseModel with ModelCacheManager{
     // TODO: implement primaryKey
     return primaryField.mkey;
   }
+  @override
+  String primaryValue() {
+    // TODO: implement primaryValue
+    return primaryField.anyValue();
+  }
 
   @override
   String tableName() {
@@ -113,6 +118,16 @@ class BaseModel with ModelCacheManager{
     return tablename ??= runtimeType.toString();
   }
 
+  @override
+  Future updateRaw({String priValue, Map<String, dynamic> vals, String where, List whereArgs}) {
+    // TODO: implement updateRaw
+    return super.updateRaw(priValue: primaryValue(),vals: toDict());
+  }
+  @override
+  Future insertRaw({Map<String, dynamic> rawData}) {
+    // TODO: implement insertRaw
+    return super.insertRaw(rawData: rawData??toDict());
+  }
 }
 
 const String DBNAME = "MAIN_DB.db";
@@ -134,6 +149,9 @@ class ModelCacheManager {
 
   /// 主键名称
   String primaryKey() {
+    return "";
+  }
+  String primaryValue(){
     return "";
   }
 
@@ -173,26 +191,31 @@ class ModelCacheManager {
   }
 
   /// 更新某条数据
-  Future updateRaw(String priValue,{Map<String, dynamic> vals,String where ,List whereArgs}) async {
+  Future updateRaw({String priValue ,Map<String, dynamic> vals,String where ,List whereArgs}) async {
     _dataBase ??= await connectToDatabase();
+    priValue ??= primaryValue();
     if(await fetchPieceOfData(primaryKey(), [priValue]) != null){
       //有值更新
       return await _dataBase.update(tableName(), vals, where: where, whereArgs: whereArgs);
     }else{
       // 无值插入
-      return await insertRaw(vals);
+      return await insertRaw(rawData:vals);
     }
   }
 
   /// 插入数据
-  Future insertRaw(Map<String,dynamic> rawData) async {
+  Future insertRaw({Map<String,dynamic> rawData}) async {
     _dataBase ??= await connectToDatabase();
     return await _dataBase.insert(tableName(), rawData);
   }
 
   /// 删除数据
-  Future deleteRawData(String where,List whereArgs) async {
+  Future deleteRawData({String where,List whereArgs}) async {
     _dataBase ??= await connectToDatabase();
+
+    where ??= primaryKey();
+    whereArgs ??= [primaryValue()];
+
     return await _dataBase.delete(tableName(),where: where,whereArgs: whereArgs);
   }
 }
